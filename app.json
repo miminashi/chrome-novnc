@@ -24,10 +24,7 @@
          "value": "Chromium",
          "required": true
       },
-      "VNC_PASS": {
-         "description": "VNC server password (8+ characters)",
-         "required": true
-      },
+
       "VNC_RESOLUTION": {
          "description": "VNC server resolution in WidthxHeight format (720p preferred)",
          "value": "1280x720",

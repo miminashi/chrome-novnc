@@ -1,29 +1,33 @@
 FROM alpine:3.19.1
 
-LABEL AboutImage "Alpine_Chromium_NoVNC"
+LABEL AboutImage="Alpine_Chromium_NoVNC"
 
-LABEL Maintainer "Apurv Vyavahare <apurvvyavahare@gmail.com>"
+LABEL Maintainer="Apurv Vyavahare <apurvvyavahare@gmail.com>"
 
-#VNC Server Password
-ENV	VNC_PASS="CHANGE_IT" \
-#VNC Server Title(w/o spaces)
-	VNC_TITLE="Chromium" \
-#VNC Resolution(720p is preferable)
-	VNC_RESOLUTION="1280x720" \
-#VNC Shared Mode
-	VNC_SHARED=false \
-#Local Display Server Port
-	DISPLAY=:0 \
-#NoVNC Port
-	NOVNC_PORT=$PORT \
-	PORT=8080 \
-#Heroku No-Sleep Mode
-	NO_SLEEP=false \
-#Locale
-	LANG=en_US.UTF-8 \
-	LANGUAGE=en_US.UTF-8 \
-	LC_ALL=C.UTF-8 \
-	TZ="Asia/Kolkata"
+# VNC Server Title(w/o spaces)
+ENV VNC_TITLE="Chromium"
+
+# VNC Resolution(720p is preferable)
+ENV VNC_RESOLUTION="1280x720"
+
+# VNC Shared Mode
+ENV VNC_SHARED=false
+
+# Local Display Server Port
+ENV DISPLAY=:0
+
+ENV PORT=8080
+# NoVNC Port
+ENV NOVNC_PORT=$PORT
+
+# Heroku No-Sleep Mode
+ENV NO_SLEEP=false
+
+# Locale
+ENV LANG=ja_JP.UTF-8
+ENV LANGUAGE=ja_JP.UTF-8
+ENV LC_ALL=ja_JP.UTF-8
+ENV TZ="Asia/Tokyo"
 
 COPY assets/ /
 
