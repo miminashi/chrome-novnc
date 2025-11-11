@@ -33,13 +33,21 @@ RUN apt-get update && \
         x11vnc \
         novnc \
         openbox \
-        chromium \
+        socat \
         libnss3 \
         libasound2 \
         fonts-noto-cjk \
         ca-certificates \
         tzdata \
-        locales && \
+        locales \
+        python3-pip && \
+    # Install uv
+    pip install uv --break-system-packages && \
+    # Install chromium using playwright via uvx
+    uvx playwright install chromium --with-deps --no-shell && \
+    # Create a symlink to the installed chromium
+    CHROME_PATH=$(find /root/.cache/ms-playwright/ -type f -name chrome | head -n 1) && \
+    ln -s $CHROME_PATH /usr/bin/chromium && \
     # Configure locale
     sed -i 's/^# *\(ja_JP.UTF-8\)/\1/' /etc/locale.gen && \
     locale-gen && \
