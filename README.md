@@ -1,27 +1,28 @@
 # Chromium with NoVNC
 
-## Installation
-- ### Heroku
-    [![Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/vital987/chrome-novnc)
+|English|[日本語](README.ja.md)|
+
+![screenshot](screenshot.png "screenshot")
+
+- Run Chromium browser inside a Docker container and remotely access the containerized Chromium browser from your browser using NoVNC
+- Useful for running browsers on servers for web scraping and automation tasks using LLMs
 
 
-- ### Manual
-    ```sh
-    docker run \
-        --name chrome-novnc \
-        -e PORT=8080 \
-        -p 8080:8080 \
-        
-        -d vital987/chrome-novnc:latest
-    ```
+## How to Run
+```
+docker compose up
+```
 
-## Environment variables:
-|VARIABLE      |DESCRIPTION              |DEFAULT VALUE  |
-|-------------:|:------------------------|:-------------:|
+Access http://localhost:8080.
 
-|VNC_TITLE     |VNC Session Title        |Chromium       |
-|VNC_SHARED    |VNC Shared Mode          |false          |
-|VNC_RESOLUTION|VNC Resolution           |1280x720       |
-|PORT          |NoVNC HTTPS Port         |Heroku specific|
-|APP_NAME      |Name of the app          |Heroku specific|
-|NO_SLEEP      |Prevent app from sleeping|Heroku specific|
+
+## Usage Example: Using with browser-use
+```python
+browser_session = BrowserSession(
+    headless=False,
+    window_size={"width": 1280, "height": 1024},
+    viewport={"width": 1248, "height": 895},
+    cdp_url="http://localhost:9222",
+    keep_alive=True
+)
+```
