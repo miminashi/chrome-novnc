@@ -4,7 +4,7 @@
 
 ![screenshot](screenshot.png "screenshot")
 
-- Run Chromium browser inside a Docker container and remotely access the containerized Chromium browser from your browser using NoVNC
+- Run Chromium browser inside a Docker container and remotely access the containerized Chromium browser from your browser using noVNC
 - Useful for running browsers on servers for web scraping and automation tasks using LLMs
 
 

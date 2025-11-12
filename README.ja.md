@@ -4,7 +4,7 @@
 
 ![screenshot](screenshot.png "screenshot")
 
-- Dockerコンテナ内でChromiumブラウザを実行し、NoVNCを使用してブラウザからコンテナ内のChromiumブラウザにリモートアクセスできます
+- Dockerコンテナ内でChromiumブラウザを実行し、noVNCを使用してブラウザからコンテナ内のChromiumブラウザにリモートアクセスできます
 - LLMを使用したWebスクレイピングや自動化タスクで使うブラウザを、サーバ上で動かすのに便利です
 
 
