@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import json
+from urllib.parse import urlparse, urlunparse
 from aiohttp import web, ClientSession, WSMsgType
 
 # 設定
@@ -7,33 +9,66 @@ LISTEN_HOST = '0.0.0.0'
 LISTEN_PORT = 9222
 TARGET_HOST = 'localhost'
 TARGET_PORT = 9223
+
 TARGET_BASE_URL = f'http://{TARGET_HOST}:{TARGET_PORT}'
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def proxy_http(request):
     """通常のHTTPリクエストをプロキシする"""
+    original_host = request.headers.get('Host')
     target_url = f"{TARGET_BASE_URL}{request.path_qs}"
-    headers = dict(request.headers)
-    headers['Host'] = f'{TARGET_HOST}:{LISTEN_PORT}'
+
+    # ターゲットへのリクエストヘッダーを準備
+    forward_headers = dict(request.headers)
+    forward_headers['Host'] = f'{TARGET_HOST}:{TARGET_PORT}'
 
     async with ClientSession() as session:
         try:
             async with session.request(
                 request.method,
                 target_url,
-                headers=headers,
+                headers=forward_headers,
                 data=await request.read()
             ) as resp:
                 content = await resp.read()
+                # ヘッダーはミュータブルなdictにコピーする
+                response_headers = dict(resp.headers)
+
+                # /json/version または /json の場合、レスポンスを書き換える
+                if (request.path == '/json/version' or request.path == '/json') and resp.status == 200 and original_host:
+                    try:
+                        data = json.loads(content)
+
+                        # /json の場合はリスト内の各要素を処理
+                        items = data if isinstance(data, list) else [data]
+
+                        for item in items:
+                            if 'webSocketDebuggerUrl' in item:
+                                ws_url_parts = urlparse(item['webSocketDebuggerUrl'])
+                                new_ws_url_parts = ws_url_parts._replace(netloc=original_host)
+                                item['webSocketDebuggerUrl'] = urlunparse(new_ws_url_parts)
+                                logging.info(f"Rewrote webSocketDebuggerUrl for host: {original_host}")
+
+                        content = json.dumps(data).encode('utf-8')
+                        response_headers['Content-Length'] = str(len(content))
+
+                    except (json.JSONDecodeError, KeyError) as e:
+                        logging.warning(f"Failed to modify {request.path} response: {e}")
+
+                # aiohttpに再圧縮させないようにContent-Encodingを削除
+                if 'Content-Encoding' in response_headers:
+                    del response_headers['Content-Encoding']
+
+                # Transfer-Encodingヘッダも削除
+                if 'Transfer-Encoding' in response_headers:
+                    del response_headers['Transfer-Encoding']
+
                 response = web.Response(
                     body=content,
                     status=resp.status,
-                    headers=resp.headers
+                    headers=response_headers
                 )
-                # Content-Encodingヘッダを削除してaiohttpに再圧縮させない
-                if 'Content-Encoding' in response.headers:
-                    del response.headers['Content-Encoding']
                 return response
         except Exception as e:
             logging.error(f"Error proxying HTTP request: {e}")
@@ -64,9 +99,9 @@ async def proxy_websocket(request):
                         elif msg.type == WSMsgType.BINARY:
                             await ws_server.send_bytes(msg.data)
                         elif msg.type == WSMsgType.CLOSED:
-                            await ws_server.close()
+                            await ws_server.close(code=ws_client.close_code or 999, message=msg.data)
                         elif msg.type == WSMsgType.ERROR:
-                            await ws_server.close()
+                            await ws_server.close(code=ws_client.close_code or 999, message=msg.data)
                     logging.info("Forward to client finished.")
 
 
@@ -78,9 +113,9 @@ async def proxy_websocket(request):
                         elif msg.type == WSMsgType.BINARY:
                             await ws_client.send_bytes(msg.data)
                         elif msg.type == WSMsgType.CLOSED:
-                            await ws_client.close()
+                            await ws_client.close(code=ws_server.close_code or 999, message=msg.data)
                         elif msg.type == WSMsgType.ERROR:
-                            await ws_client.close()
+                            await ws_client.close(code=ws_server.close_code or 999, message=msg.data)
                     logging.info("Forward to target finished.")
 
                 # 双方向のメッセージ転送を並行して実行
