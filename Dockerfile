@@ -18,9 +18,9 @@ ENV DISPLAY=:0
 ENV PORT=8080
 ENV NOVNC_PORT=$PORT
 
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
         supervisor \
         bash \
@@ -39,22 +39,26 @@ RUN apt-get update && \
         tzdata \
         locales \
         python3-pip && \
-    # Install uv
-    pip install uv --break-system-packages && \
-    # Install chromium using playwright via uvx
-    uvx playwright install chromium --with-deps --no-shell && \
-    # Create a symlink to the installed chromium
-    CHROME_PATH=$(find /root/.cache/ms-playwright/ -type f -name chrome | head -n 1) && \
-    ln -s $CHROME_PATH /usr/bin/chromium && \
-    # Configure locale
-    sed -i 's/^# *\(ja_JP.UTF-8\)/\1/' /etc/locale.gen && \
-    locale-gen && \
-    # Configure timezone
-    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
-    echo $TZ > /etc/timezone && \
-    # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install uv and aiohttp
+RUN pip install uv aiohttp --break-system-packages
+
+# Install chromium using playwright via uvx
+RUN uvx playwright install chromium --with-deps --no-shell
+
+# Create a symlink to the installed chromium
+RUN CHROME_PATH=$(find /root/.cache/ms-playwright/ -type f -name chrome | head -n 1) && \
+  ln -s $CHROME_PATH /usr/bin/chromium
+
+# Configure locale
+RUN sed -i 's/^# *\(ja_JP.UTF-8\)/\1/' /etc/locale.gen && \
+  locale-gen
+
+# Configure timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+  echo $TZ > /etc/timezone
 
 COPY assets/ /
 
